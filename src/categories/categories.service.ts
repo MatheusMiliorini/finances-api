@@ -3,7 +3,6 @@ import { CreateCategoryDto } from './dto/create-category.dto';
 import { UpdateCategoryDto } from './dto/update-category.dto';
 import { Category } from './entities/category.entity';
 import { db } from '../config/firebase';
-import { FIREBASE_CONFIG_VAR } from 'firebase-admin/lib/app/lifecycle';
 
 @Injectable()
 export class CategoriesService {
