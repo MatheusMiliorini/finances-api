@@ -7,17 +7,19 @@ import { db } from '../config/firebase';
 @Injectable()
 export class CategoriesService {
 
-  private COLLECTION = 'categories';
+  getCollection(): string {
+    return 'categories';
+  }
 
   async create(createCategoryDto: CreateCategoryDto): Promise<Category> {
-    const doc = await db.collection(this.COLLECTION).add(createCategoryDto);
+    const doc = await db.collection(this.getCollection()).add(createCategoryDto);
     const data = (await doc.get()).data() as CreateCategoryDto;
     return { ...data, id: doc.id };
   }
 
   async findAll(): Promise<Category[]> {
     const categories: Category[] = [];
-    (await db.collection(this.COLLECTION).get())
+    (await db.collection(this.getCollection()).get())
       .forEach(doc => {
         const data = doc.data() as Category;
         categories.push({
@@ -29,7 +31,10 @@ export class CategoriesService {
   }
 
   async findOne(id: string): Promise<Category | null> {
-    const doc = await db.collection(this.COLLECTION).doc(id).get();
+    if (!id) {
+      return null;
+    }
+    const doc = await db.collection(this.getCollection()).doc(id).get();
     if (doc.exists) {
       return {
         ...doc.data() as CreateCategoryDto,
@@ -40,7 +45,7 @@ export class CategoriesService {
   }
 
   async update(id: string, updateCategoryDto: UpdateCategoryDto): Promise<Category | boolean> {
-    const doc = await db.collection(this.COLLECTION).doc(id).get();
+    const doc = await db.collection(this.getCollection()).doc(id).get();
     if (doc.exists) {
       await doc.ref.update(updateCategoryDto);
       return {
@@ -52,9 +57,9 @@ export class CategoriesService {
   }
 
   async remove(id: string): Promise<boolean> {
-    const doc = await db.collection(this.COLLECTION).doc(id).get();
+    const doc = await db.collection(this.getCollection()).doc(id).get();
     if (doc.exists) {
-      await doc.ref.delete();
+      await doc.ref.update({ active: false });
       return true;
     }
     return false;

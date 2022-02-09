@@ -7,10 +7,12 @@ import { Account } from './entities/account.entity';
 @Injectable()
 export class AccountsService {
 
-  private COLLECTION = 'accounts';
+  getCollection(): string {
+    return 'accounts';
+  }
 
   async create(createAccountDto: CreateAccountDto): Promise<Account> {
-    const doc = await db.collection(this.COLLECTION).add(createAccountDto);
+    const doc = await db.collection(this.getCollection()).add(createAccountDto);
     return {
       ...(await doc.get()).data() as CreateAccountDto,
       id: doc.id
@@ -18,7 +20,7 @@ export class AccountsService {
   }
 
   async findAll(): Promise<Account[]> {
-    const docs = await db.collection(this.COLLECTION).orderBy('name').get();
+    const docs = await db.collection(this.getCollection()).orderBy('name').get();
     const accounts: Account[] = [];
     docs.forEach(doc => {
       accounts.push({
@@ -30,7 +32,10 @@ export class AccountsService {
   }
 
   async findOne(id: string): Promise<Account | null> {
-    const doc = await db.collection(this.COLLECTION).doc(id).get();
+    if (!id) {
+      return null;
+    }
+    const doc = await db.collection(this.getCollection()).doc(id).get();
     if (doc.exists) {
       return {
         ...doc.data() as CreateAccountDto,
@@ -41,7 +46,7 @@ export class AccountsService {
   }
 
   async update(id: string, updateAccountDto: UpdateAccountDto): Promise<Account | boolean> {
-    const doc = await db.collection(this.COLLECTION).doc(id).get();
+    const doc = await db.collection(this.getCollection()).doc(id).get();
     if (doc.exists) {
       await doc.ref.update(updateAccountDto);
       return {
@@ -53,9 +58,9 @@ export class AccountsService {
   }
 
   async remove(id: string): Promise<boolean> {
-    const doc = await db.collection(this.COLLECTION).doc(id).get();
+    const doc = await db.collection(this.getCollection()).doc(id).get();
     if (doc.exists) {
-      await doc.ref.delete();
+      await doc.ref.update({ active: false });
       return true;
     }
     return false;
