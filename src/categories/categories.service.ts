@@ -19,7 +19,7 @@ export class CategoriesService {
 
   async findAll(): Promise<Category[]> {
     const categories: Category[] = [];
-    (await db.collection(this.getCollection()).get())
+    (await db.collection(this.getCollection()).where('active', '==', true).orderBy('name').get())
       .forEach(doc => {
         const data = doc.data() as Category;
         categories.push({
