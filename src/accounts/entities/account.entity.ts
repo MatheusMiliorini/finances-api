@@ -3,4 +3,5 @@ export class Account {
   name: string;
   initialBalance: number;
   active: boolean;
+  balance: number;
 }

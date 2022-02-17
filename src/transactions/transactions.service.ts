@@ -1,4 +1,4 @@
-import { Injectable, NotFoundException } from '@nestjs/common';
+import { forwardRef, Inject, Injectable, NotFoundException } from '@nestjs/common';
 import { AccountsService } from 'src/accounts/accounts.service';
 import { Account } from 'src/accounts/entities/account.entity';
 import { CategoriesService } from 'src/categories/categories.service';
@@ -12,7 +12,7 @@ import { Transaction } from './entities/transaction.entity';
 export class TransactionsService {
 
   constructor(
-    private accountsService: AccountsService,
+    @Inject(forwardRef(() => AccountsService)) private accountsService: AccountsService,
     private categoryService: CategoriesService
   ) { }
 

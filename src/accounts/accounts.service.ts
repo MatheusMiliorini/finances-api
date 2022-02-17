@@ -1,11 +1,16 @@
-import { Injectable } from '@nestjs/common';
+import { forwardRef, Inject, Injectable } from '@nestjs/common';
 import { db } from 'src/config/firebase';
+import { BalanceFetcher } from 'src/providers/BalanceFetcher';
 import { CreateAccountDto } from './dto/create-account.dto';
 import { UpdateAccountDto } from './dto/update-account.dto';
 import { Account } from './entities/account.entity';
 
 @Injectable()
 export class AccountsService {
+
+  constructor(
+    private balanceFetcher: BalanceFetcher
+  ) { }
 
   getCollection(): string {
     return 'accounts';
@@ -15,19 +20,22 @@ export class AccountsService {
     const doc = await db.collection(this.getCollection()).add(createAccountDto);
     return {
       ...(await doc.get()).data() as CreateAccountDto,
-      id: doc.id
+      id: doc.id,
+      balance: createAccountDto.initialBalance
     }
   }
 
   async findAll(): Promise<Account[]> {
     const docs = await db.collection(this.getCollection()).orderBy('name').get();
     const accounts: Account[] = [];
-    docs.forEach(doc => {
+    await Promise.all(docs.docs.map(async _account => {
+      const account: CreateAccountDto = _account.data() as CreateAccountDto;
       accounts.push({
-        ...doc.data() as CreateAccountDto,
-        id: doc.id
-      });
-    });
+        ...account,
+        id: _account.id,
+        balance: await this.balanceFetcher.fetchBalance(_account.id, account.initialBalance),
+      })
+    }));
     return accounts;
   }
 
@@ -37,9 +45,11 @@ export class AccountsService {
     }
     const doc = await db.collection(this.getCollection()).doc(id).get();
     if (doc.exists) {
+      const data = doc.data() as CreateAccountDto;
       return {
-        ...doc.data() as CreateAccountDto,
-        id: doc.id
+        ...data,
+        id: doc.id,
+        balance: await this.balanceFetcher.fetchBalance(doc.id, data.initialBalance),
       }
     }
     return null;
@@ -49,9 +59,11 @@ export class AccountsService {
     const doc = await db.collection(this.getCollection()).doc(id).get();
     if (doc.exists) {
       await doc.ref.update(updateAccountDto);
+      const data = (await doc.ref.get()).data() as CreateAccountDto;
       return {
-        ...(await doc.ref.get()).data() as CreateAccountDto,
-        id: doc.id
+        ...data,
+        id: doc.id,
+        balance: await this.balanceFetcher.fetchBalance(doc.id, data.initialBalance),
       }
     }
     return false;
