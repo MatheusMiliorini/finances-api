@@ -7,6 +7,7 @@ import { BalanceFetcher } from 'src/providers/BalanceFetcher';
 
 @Module({
   controllers: [TransactionsController],
-  providers: [TransactionsService, AccountsService, CategoriesService, BalanceFetcher]
+  providers: [TransactionsService, AccountsService, CategoriesService, BalanceFetcher],
+  exports: [TransactionsService],
 })
 export class TransactionsModule { }

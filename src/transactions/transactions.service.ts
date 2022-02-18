@@ -26,6 +26,9 @@ export class TransactionsService {
     let accountTo;
     if (createAccountDto.accountTo) {
       accountTo = await this.accountsService.findOne(createAccountDto.accountTo);
+      if (!accountTo) {
+        throw new NotFoundException("Conta destino não encontrada");
+      }
     }
 
     if (!account) {
@@ -38,15 +41,12 @@ export class TransactionsService {
     const data = (await doc.get()).data() as CreateTransactionDto;
     return {
       ...data,
-      id: doc.id,
-      account,
-      category,
-      accountTo
+      id: doc.id
     };
   }
 
   async findAll(accountId: string): Promise<Transaction[]> {
-    const account = await this.accountsService.findOne(accountId);
+    const account = await this.accountsService.exists(accountId);
     if (!account) {
       throw new NotFoundException("Conta não encontrada!");
     }
@@ -57,9 +57,6 @@ export class TransactionsService {
       transactions.push({
         ...transactionData,
         id: transaction.id,
-        account: await this.accountsService.findOne(transactionData.account),
-        category: await this.categoryService.findOne(transactionData.category),
-        accountTo: await this.accountsService.findOne(transactionData.accountTo)
       });
     }));
     return transactions;
@@ -75,9 +72,6 @@ export class TransactionsService {
       return {
         ...data,
         id: doc.id,
-        account: await this.accountsService.findOne(data.account),
-        accountTo: await this.accountsService.findOne(data.accountTo),
-        category: await this.categoryService.findOne(data.category)
       }
     }
     return null;
@@ -89,16 +83,23 @@ export class TransactionsService {
     let accountTo;
     if (updateAccountDto.accountTo) {
       accountTo = await this.accountsService.findOne(updateAccountDto.accountTo);
+      if (!accountTo) {
+        throw new NotFoundException("Conta destino não encontrada");
+      }
     }
+
+    if (!account) {
+      throw new NotFoundException("Conta não encontrada!");
+    } else if (!category) {
+      throw new NotFoundException("Categoria não encontrada!");
+    }
+
     const doc = await db.collection(this.getCollection()).doc(id).get();
     if (doc.exists) {
       await doc.ref.update(updateAccountDto);
       return {
         ...(await doc.ref.get()).data() as CreateTransactionDto,
         id: doc.id,
-        account,
-        category,
-        accountTo
       }
     }
     return false;

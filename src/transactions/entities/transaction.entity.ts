@@ -18,9 +18,9 @@ export class Transaction {
 
   payDate: Date;
 
-  account: Account;
+  account: string;
 
-  category: Category;
+  category: string;
 
-  accountTo?: Account;
+  accountTo?: string;
 }
