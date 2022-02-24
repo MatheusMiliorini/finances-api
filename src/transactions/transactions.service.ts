@@ -3,18 +3,21 @@ import { AccountsService } from 'src/accounts/accounts.service';
 import { Account } from 'src/accounts/entities/account.entity';
 import { CategoriesService } from 'src/categories/categories.service';
 import { db } from 'src/config/firebase';
+import Service from 'src/Service';
 import { threadId } from 'worker_threads';
 import { CreateTransactionDto } from './dto/create-transaction.dto';
 import { UpdateTransactionDto } from './dto/update-transaction.dto';
 import { Transaction } from './entities/transaction.entity';
 
 @Injectable()
-export class TransactionsService {
+export class TransactionsService extends Service {
 
   constructor(
     @Inject(forwardRef(() => AccountsService)) private accountsService: AccountsService,
     private categoryService: CategoriesService
-  ) { }
+  ) {
+    super();
+  }
 
   getCollection(): string {
     return 'transactions';
@@ -105,12 +108,4 @@ export class TransactionsService {
     return false;
   }
 
-  async remove(id: string): Promise<boolean> {
-    const doc = await db.collection(this.getCollection()).doc(id).get();
-    if (doc.exists) {
-      await doc.ref.delete();
-      return true;
-    }
-    return false;
-  }
 }

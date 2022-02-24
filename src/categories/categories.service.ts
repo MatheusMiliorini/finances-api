@@ -3,9 +3,10 @@ import { CreateCategoryDto } from './dto/create-category.dto';
 import { UpdateCategoryDto } from './dto/update-category.dto';
 import { Category } from './entities/category.entity';
 import { db } from '../config/firebase';
+import Service from 'src/Service';
 
 @Injectable()
-export class CategoriesService {
+export class CategoriesService extends Service {
 
   getCollection(): string {
     return 'categories';
@@ -56,12 +57,4 @@ export class CategoriesService {
     return false;
   }
 
-  async remove(id: string): Promise<boolean> {
-    const doc = await db.collection(this.getCollection()).doc(id).get();
-    if (doc.exists) {
-      await doc.ref.update({ active: false });
-      return true;
-    }
-    return false;
-  }
 }

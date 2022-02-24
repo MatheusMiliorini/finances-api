@@ -1,16 +1,17 @@
 import { forwardRef, Inject, Injectable } from '@nestjs/common';
 import { db } from 'src/config/firebase';
 import { BalanceFetcher } from 'src/providers/BalanceFetcher';
+import Service from 'src/Service';
 import { CreateAccountDto } from './dto/create-account.dto';
 import { UpdateAccountDto } from './dto/update-account.dto';
 import { Account } from './entities/account.entity';
 
 @Injectable()
-export class AccountsService {
+export class AccountsService extends Service {
 
-  constructor(
-    private balanceFetcher: BalanceFetcher
-  ) { }
+  constructor(private balanceFetcher: BalanceFetcher) {
+    super();
+  }
 
   getCollection(): string {
     return 'accounts';
@@ -69,17 +70,4 @@ export class AccountsService {
     return false;
   }
 
-  async remove(id: string): Promise<boolean> {
-    const doc = await db.collection(this.getCollection()).doc(id).get();
-    if (doc.exists) {
-      await doc.ref.update({ active: false });
-      return true;
-    }
-    return false;
-  }
-
-  async exists(id: string): Promise<boolean> {
-    const doc = await db.collection(this.getCollection()).doc(id).get();
-    return doc.exists;
-  }
 }

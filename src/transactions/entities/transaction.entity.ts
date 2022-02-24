@@ -1,10 +1,7 @@
-import { Account } from "src/accounts/entities/account.entity";
-import { Category } from "src/categories/entities/category.entity";
 import TransactionType from "src/enums/TransactionType";
+import Model from "src/Model";
 
-export class Transaction {
-
-  id: string;
+export class Transaction extends Model {
 
   name: string;
 
@@ -23,4 +20,5 @@ export class Transaction {
   category: string;
 
   accountTo?: string;
+
 }
