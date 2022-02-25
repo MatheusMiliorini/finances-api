@@ -1,4 +1,5 @@
 import { forwardRef, Inject, Injectable, NotFoundException } from '@nestjs/common';
+import { DocumentData, DocumentSnapshot } from 'firebase-admin/firestore';
 import { AccountsService } from 'src/accounts/accounts.service';
 import { Account } from 'src/accounts/entities/account.entity';
 import { CategoriesService } from 'src/categories/categories.service';
@@ -23,6 +24,14 @@ export class TransactionsService extends Service {
     return 'transactions';
   }
 
+  protected mapToModel(doc: DocumentSnapshot<DocumentData>): Transaction {
+    const transactionData: CreateTransactionDto = doc.data() as CreateTransactionDto;
+    return {
+      ...transactionData,
+      id: doc.id,
+    };
+  }
+
   async create(createAccountDto: CreateTransactionDto): Promise<Transaction> {
     const account = await this.accountsService.findOne(createAccountDto.account);
     const category = await this.categoryService.findOne(createAccountDto.category);
@@ -41,11 +50,7 @@ export class TransactionsService extends Service {
     }
 
     const doc = await db.collection(this.getCollection()).add(createAccountDto);
-    const data = (await doc.get()).data() as CreateTransactionDto;
-    return {
-      ...data,
-      id: doc.id
-    };
+    return this.mapToModel(await doc.get());
   }
 
   async findAll(accountId: string): Promise<Transaction[]> {
@@ -56,11 +61,7 @@ export class TransactionsService extends Service {
     const transactions: Transaction[] = [];
     const _docs = await db.collection(this.getCollection()).where('account', '==', accountId).get();
     await Promise.all(_docs.docs.map(async transaction => {
-      const transactionData: CreateTransactionDto = transaction.data() as CreateTransactionDto;
-      transactions.push({
-        ...transactionData,
-        id: transaction.id,
-      });
+      transactions.push(this.mapToModel(transaction));
     }));
     return transactions;
   }
@@ -69,13 +70,9 @@ export class TransactionsService extends Service {
     if (!id) {
       return null;
     }
-    const doc = await db.collection(this.getCollection()).doc(id).get();
+    const doc = await this.getOne(id);
     if (doc.exists) {
-      const data: CreateTransactionDto = doc.data() as CreateTransactionDto;
-      return {
-        ...data,
-        id: doc.id,
-      }
+      return this.mapToModel(doc);
     }
     return null;
   }
@@ -97,13 +94,10 @@ export class TransactionsService extends Service {
       throw new NotFoundException("Categoria não encontrada!");
     }
 
-    const doc = await db.collection(this.getCollection()).doc(id).get();
+    const doc = await this.getOne(id);
     if (doc.exists) {
       await doc.ref.update(updateAccountDto);
-      return {
-        ...(await doc.ref.get()).data() as CreateTransactionDto,
-        id: doc.id,
-      }
+      return this.mapToModel(await doc.ref.get());
     }
     return false;
   }

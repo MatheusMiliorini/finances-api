@@ -4,6 +4,7 @@ import { UpdateCategoryDto } from './dto/update-category.dto';
 import { Category } from './entities/category.entity';
 import { db } from '../config/firebase';
 import Service from 'src/Service';
+import { DocumentData, DocumentSnapshot } from 'firebase-admin/firestore';
 
 @Injectable()
 export class CategoriesService extends Service {
@@ -14,19 +15,22 @@ export class CategoriesService extends Service {
 
   async create(createCategoryDto: CreateCategoryDto): Promise<Category> {
     const doc = await db.collection(this.getCollection()).add(createCategoryDto);
-    const data = (await doc.get()).data() as CreateCategoryDto;
-    return { ...data, id: doc.id };
+    return this.mapToModel(await doc.get());
+  }
+
+  protected mapToModel(doc: DocumentSnapshot<DocumentData>): Category {
+    const data = doc.data() as CreateCategoryDto;
+    return {
+      ...data,
+      id: doc.id
+    };
   }
 
   async findAll(): Promise<Category[]> {
     const categories: Category[] = [];
-    (await db.collection(this.getCollection()).where('active', '==', true).orderBy('name').get())
+    (await this.getAllActive<Category>('name'))
       .forEach(doc => {
-        const data = doc.data() as Category;
-        categories.push({
-          ...data,
-          id: doc.id
-        })
+        categories.push(this.mapToModel(doc));
       });
     return categories;
   }
@@ -35,24 +39,18 @@ export class CategoriesService extends Service {
     if (!id) {
       return null;
     }
-    const doc = await db.collection(this.getCollection()).doc(id).get();
+    const doc = await this.getOne(id);
     if (doc.exists) {
-      return {
-        ...doc.data() as CreateCategoryDto,
-        id: doc.id
-      }
+      return this.mapToModel(doc);
     }
     return null;
   }
 
   async update(id: string, updateCategoryDto: UpdateCategoryDto): Promise<Category | boolean> {
-    const doc = await db.collection(this.getCollection()).doc(id).get();
+    const doc = await this.getOne(id);
     if (doc.exists) {
       await doc.ref.update(updateCategoryDto);
-      return {
-        ...(await doc.ref.get()).data() as CreateCategoryDto,
-        id: doc.id
-      }
+      return this.mapToModel(await doc.ref.get());
     }
     return false;
   }
